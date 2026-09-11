@@ -1336,17 +1336,17 @@
         </div>
 
         <div class="mode-select" id="mode-select">
-          <button type="button" class="mode-card is-selected" id="mode-card-new" data-mode="new">
+          <button type="button" class="mode-card hidden" id="mode-card-new" data-mode="new">
             <span class="mode-card-title">Neues Spielprinzip</span>
             <span class="mode-card-desc">Antworten selbst aufdecken, Tempo-Bonus, steigende Schwierigkeit, 2 Joker-Arten</span>
           </button>
-          <button type="button" class="mode-card" id="mode-card-classic" data-mode="classic">
-            <span class="mode-card-title">Klassisch</span>
-            <span class="mode-card-desc">Serie sammeln, 2 Joker-Arten (Überspringen + 50:50), ein Fehler beendet das Spiel</span>
+          <button type="button" class="mode-card is-selected" id="mode-card-classic" data-mode="classic">
+            <span class="mode-card-title">Competition</span>
+            <span class="mode-card-desc">Ein Fehler beendet die Runde. Sammle deine beste Serie und miss dich mit anderen. 2 Joker-Arten (Überspringen + 50:50)</span>
           </button>
           <button type="button" class="mode-card" id="mode-card-classic-ki" data-mode="classic-ki">
-            <span class="mode-card-title">Klassisch mit KI-Fragen</span>
-            <span class="mode-card-desc">Klassisch mit den neuen KI-generierten Fragen, eigene Highscore-Liste, gleiche Joker wie Klassisch</span>
+            <span class="mode-card-title">Training</span>
+            <span class="mode-card-desc">Übe ohne Druck und verbessere deine Serie. Gleiche Regeln wie Competition, 2 Joker-Arten (Überspringen + 50:50)</span>
           </button>
         </div>
 
@@ -1386,10 +1386,10 @@
       <div class="welcome-card">
         <h1>Highscore</h1>
         <div class="hs-tabs" id="hs-tabs">
-          <button type="button" class="hs-tab is-active" data-mode="new">Neues Spielprinzip</button>
-          <button type="button" class="hs-tab" data-mode="classic">Klassisch</button>
-          <button type="button" class="hs-tab" data-mode="classic-ki">Klassisch mit KI-Fragen</button>
-          <button type="button" class="hs-tab" data-mode="classic-solo">Klassisch Einzelspieler Score</button>
+          <button type="button" class="hs-tab is-active" data-mode="classic-solo">Einzelspieler Score</button>
+          <button type="button" class="hs-tab" data-mode="classic">Nach Postleitzahl</button>
+          <button type="button" class="hs-tab hidden" data-mode="new">Neues Spielprinzip</button>
+          <button type="button" class="hs-tab hidden" data-mode="classic-ki">Training</button>
         </div>
         <div id="highscore-list"><p class="hs-loading">Wird geladen…</p></div>
         <div class="button-row" style="margin-top: 24px;">
@@ -2422,7 +2422,7 @@
       correctAnswers: 0,
       questions: [],
       usedIds: new Set(),
-      gameMode: "new",
+      gameMode: "classic",
       jokersLeft: 3,
       fiftyFiftyLeft: 3,
       fiftyAnimating: false,
@@ -3774,7 +3774,12 @@
       } catch (e) { /* silent fallback — startGame handles missing questions */ }
     }
 
-    let highscoreMode = "new";
+    let highscoreMode = "classic-solo";
+
+    // "new" und "classic-ki" haben aktuell keinen sichtbaren Tab mehr (siehe
+    // hs-tabs) - falls darauf gefallback wird (z.B. state.gameMode nach einer
+    // Training-Runde), stattdessen den ersten sichtbaren Tab zeigen.
+    const HIDDEN_HS_MODE_FALLBACK = { "new": "classic-solo", "classic-ki": "classic-solo" };
 
     function updateHsTabsUi() {
       if (!els.hsTabs) return;
@@ -3784,7 +3789,8 @@
     }
 
     async function showHighscores(mode) {
-      highscoreMode = mode || state.gameMode || "new";
+      highscoreMode = mode || state.gameMode || "classic-solo";
+      highscoreMode = HIDDEN_HS_MODE_FALLBACK[highscoreMode] || highscoreMode;
       updateHsTabsUi();
       showScreen("highscore");
       els.highscoreList.innerHTML = '<p class="hs-loading">Wird geladen…</p>';
@@ -3852,7 +3858,7 @@
       if (event.key === "Enter") startGame();
     });
 
-    if (els.highscoreBtn) els.highscoreBtn.addEventListener("click", () => showHighscores());
+    if (els.highscoreBtn) els.highscoreBtn.addEventListener("click", () => showHighscores("classic-solo"));
     if (els.backBtn) els.backBtn.addEventListener("click", () => showScreen("welcome"));
 
     if (els.hsTabs) {
