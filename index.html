@@ -123,6 +123,15 @@
       text-align: center;
     }
 
+    .welcome-logo {
+      display: block;
+      width: 128px;
+      height: 128px;
+      margin: 0 auto 10px;
+      border-radius: 24px;
+      object-fit: cover;
+    }
+
     .welcome-card p {
       font-size: 16px;
       line-height: 1.45;
@@ -1322,7 +1331,7 @@
   <div class="app">
     <section id="screen-welcome" class="screen">
       <div class="welcome-card">
-        <h1>Das <span id="quiz-title-q" style="cursor:default;">Q</span>uiz</h1>
+        <img id="quiz-title-q" class="welcome-logo" src="assets/logo.jpg" alt="DeinQuiz" style="cursor:default;" />
         <p>Wie heißt du?</p>
 
         <div class="field">
