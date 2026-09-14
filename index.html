@@ -836,19 +836,38 @@
       position: relative;
     }
 
+    /* Balken ist gespiegelt: die Füllung hängt rechts fest und ihre linke
+       (verschwindende) Kante wandert mit der Zeit nach rechts, statt wie
+       ein klassischer Ladebalken von rechts nach links zu schrumpfen. */
     .timer-bar-fill {
       position: absolute;
-      left: 0; top: 0; bottom: 0;
+      right: 0; top: 0; bottom: 0;
       width: 100%;
       border-radius: 999px;
       background: var(--primary);
       transition: width 0.9s linear, background-color 0.9s linear;
+      /* Weicher Verlauf an der linken (verschwindenden) Kante statt hartem
+         Schnitt. */
+      -webkit-mask-image: linear-gradient(to right, transparent 0, #000 18px);
+      mask-image: linear-gradient(to right, transparent 0, #000 18px);
     }
 
     /* Wird exakt in dem Moment gesetzt, in dem der timerLast5-Sound startet
        (siehe scheduleTimerSound()) - Leiste wird rot. */
     .timer-bar-fill.is-urgent {
       background: var(--red-b);
+    }
+
+    /* Dezenter Puls bei jedem Sekunden-Tick (reine Haptik). Auf der Track-
+       Hülle statt der Füllung, damit die Skalierung nicht am
+       overflow:hidden der Füllung beschnitten wird. */
+    @keyframes timerTickPulse {
+      0% { transform: scaleY(1); }
+      40% { transform: scaleY(1.35); }
+      100% { transform: scaleY(1); }
+    }
+    .timer-bar-track.tick-pulse {
+      animation: timerTickPulse 0.2s ease-out;
     }
 
     /* progress-track removed */
@@ -3228,6 +3247,11 @@
         els.uiTimerNum.textContent = String(Math.max(0, state.timerValue));
         els.uiTimer.classList.toggle("is-penalty", state.timerValue <= 5);
         updateTimerBar(state.timerValue);
+        // Dezenter Puls pro Sekunden-Tick: Klasse entfernen + Reflow
+        // erzwingen, damit die CSS-Animation bei jedem Tick neu anspringt.
+        els.uiTimer.classList.remove("tick-pulse");
+        void els.uiTimer.offsetWidth;
+        els.uiTimer.classList.add("tick-pulse");
         if (state.timerValue <= 0) {
           clearInterval(state.timerId);
           if (token !== state.flowToken) return;
