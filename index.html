@@ -823,38 +823,27 @@
       text-shadow: 0 0 10px rgba(255,100,30,0.6);
     }
 
-    /* Right: timer circle */
-    #ui-timer {
-      width: 56px; height: 56px;
-      border-radius: 50%;
-      background: rgba(55,138,221,0.12);
-      border: 1.5px solid rgba(55,138,221,0.35);
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      flex-shrink: 0;
-      transition: background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+    /* Timer: horizontale Leiste über volle Breite, leert sich von 25 auf 0
+       Sekunden, wird in den letzten 5 Sekunden langsam rot statt eine Zahl
+       anzuzeigen. */
+    .timer-bar-track {
+      flex: 1 1 auto;
+      height: 14px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.08);
+      overflow: hidden;
+      position: relative;
     }
 
-    .tb-timer-num {
-      font-size: 22px; font-weight: 700;
-      color: var(--text-main);
-      line-height: 1;
+    .timer-bar-fill {
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 100%;
+      border-radius: 999px;
+      background: var(--primary);
+      transition: width 0.9s linear, background-color 0.9s linear;
     }
-
-    .tb-timer-sek {
-      font-size: 8px;
-      color: rgba(255,255,255,0.35);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-
-    #ui-timer.is-penalty {
-      background: rgba(180,30,50,0.2);
-      border-color: rgba(200,40,60,0.7);
-      box-shadow: 0 0 18px rgba(200,40,60,0.35);
-    }
-
-    #ui-timer.is-penalty .tb-timer-num { color: #ffb3b3; }
 
     /* progress-track removed */
 
@@ -872,7 +861,7 @@
     }
 
     .question-text {
-      font-size: 20px;
+      font-size: 23px;
       line-height: 1.35;
       color: var(--text-main);
       font-weight: 600;
@@ -1053,7 +1042,7 @@
 
     /* Answer text */
     .answer-row .answer-text {
-      font-size: 17px;
+      font-size: 19px;
       color: var(--text-main);
       font-weight: 500;
       flex: 1;
@@ -1168,7 +1157,7 @@
     /* Richtig-/Falsch-Feedbacktext bei Frageauflösung: gleiche Fontgröße wie
        die Frage selbst, statt der sonst größeren .result-points-Schrift. */
     .result-feedback-text {
-      font-size: 20px;
+      font-size: 23px;
     }
 
     .result-points-sub {
@@ -1186,7 +1175,7 @@
        margin-right verdoppelt den Abstand zur Zahl (zusätzlich zum
        Leerzeichen im Text ~5.4px -> Gesamtabstand ~10.8px). */
     .result-label {
-      font-size: 20px;
+      font-size: 23px;
       color: #ffffff;
       font-weight: 700;
       -webkit-text-stroke: 0;
@@ -1282,20 +1271,19 @@
       #ui-username { font-size: 12px; }
       .tb-chip { padding: 6px 12px; }
       .c-val { font-size: 14px; }
-      #ui-timer { width: 46px; height: 46px; }
-      .tb-timer-num { font-size: 18px; }
+      .timer-bar-track { height: 12px; }
       .tb-mute { width: 32px; height: 32px; font-size: 14px; }
 
       .question-text {
-        font-size: 18px;
+        font-size: 20px;
       }
 
       .result-feedback-text {
-        font-size: 18px;
+        font-size: 20px;
       }
 
       .result-label {
-        font-size: 18px;
+        font-size: 20px;
       }
 
       .answer-row {
@@ -1303,7 +1291,7 @@
       }
 
       .answer-row .answer-text {
-        font-size: 16px;
+        font-size: 18px;
       }
 
       .next-answer-btn,
@@ -1400,7 +1388,7 @@
 
     <section id="screen-quiz" class="screen quiz-screen hidden">
       <div class="topbar">
-        <div class="tb-player">
+        <div class="tb-player hidden">
           <div class="tb-avatar" id="ui-avatar">?</div>
           <div>
             <div id="ui-username">Username</div>
@@ -1408,11 +1396,7 @@
           </div>
         </div>
 
-        <button id="mute-btn" class="tb-mute" type="button" aria-label="Sound aus">
-          <span id="mute-icon">🔊</span>
-        </button>
-
-        <div class="tb-chips" id="ui-round-difficulty">
+        <div class="tb-chips hidden" id="ui-round-difficulty">
           <div class="tb-chip">
             <span class="c-label">Frage</span>
             <span class="c-val label-frage">1</span>
@@ -1427,10 +1411,15 @@
           </div>
         </div>
 
-        <div class="tb-timer" id="ui-timer">
-          <span class="tb-timer-num" id="ui-timer-num">0</span>
-          <span class="tb-timer-sek">Sek</span>
+        <div class="timer-bar-track" id="ui-timer">
+          <div class="timer-bar-fill" id="ui-timer-fill"></div>
+          <span class="tb-timer-num hidden" id="ui-timer-num">0</span>
+          <span class="tb-timer-sek hidden">Sek</span>
         </div>
+
+        <button id="mute-btn" class="tb-mute" type="button" aria-label="Sound aus">
+          <span id="mute-icon">🔊</span>
+        </button>
       </div>
 
 <div class="question-box">
@@ -2432,7 +2421,8 @@
       roundAnswered: false,
       pendingGameOver: false,
       classicSoloScore: 0,
-      lastClassicSoloPoints: 0
+      lastClassicSoloPoints: 0,
+      nextDifficultyPreview: null
     };
 
     const screens = {
@@ -2457,6 +2447,7 @@
       uiWert: document.getElementById("ui-wert"),
       uiRoundDifficulty: document.getElementById("ui-round-difficulty"),
       uiTimer: document.getElementById("ui-timer"),
+      uiTimerFill: document.getElementById("ui-timer-fill"),
       uiTimerNum: document.getElementById("ui-timer-num"),
       progressFilled: null, // removed
       questionText: document.getElementById("question-text"),
@@ -2614,6 +2605,11 @@
       state.pendingGameOver = false;
       els.uiTimerNum.textContent = "0";
       els.uiTimer.classList.remove("is-penalty");
+      if (els.uiTimerFill) {
+        els.uiTimerFill.style.width = "100%";
+        els.uiTimerFill.style.backgroundColor = "";
+      }
+      els.continueBtn.textContent = "Weiter";
       if (els.uiWert) { els.uiWert.textContent = "–"; }
       els.answers.innerHTML = "";
       // Reste eines Skip-Joker-Auflöse-Effekts vom questionBox-Element entfernen
@@ -2712,7 +2708,15 @@
         }
       }
 
-      const targetDifficulty = getNextDifficulty();
+      // Falls der Ergebnis-Screen (classicHandleCorrect) die Schwierigkeit der
+      // nächsten Frage bereits für den "Weiter"-Button-Text vorausberechnet
+      // hat, wird genau dieser Wert wiederverwendet statt erneut zu würfeln -
+      // sonst könnten Button-Text und tatsächlich geladene Frage (bei Serie
+      // >=4, wo die Schwierigkeit zufällig ist) auseinanderlaufen.
+      const targetDifficulty = state.nextDifficultyPreview != null
+        ? state.nextDifficultyPreview
+        : getNextDifficulty();
+      state.nextDifficultyPreview = null;
       const notUsedThisRound = q => !state.usedIds.has(q.id);
       const notSeenByDistrict = q => !seen.has(q.id);
 
@@ -2805,7 +2809,7 @@
       const lvl = question.difficulty;
       els.uiRoundDifficulty.querySelector(".label-frage").textContent = String(state.round);
       els.uiRoundDifficulty.querySelector(".label-level").textContent = levelLabels[lvl] || "Leicht";
-      els.uiRoundDifficulty.className = `tb-chips level-${lvl}`;
+      els.uiRoundDifficulty.className = `tb-chips hidden level-${lvl}`;
 
       els.uiScore.textContent = `${state.totalScore} Punkte`;
       els.questionText.textContent = question.question;
@@ -3146,7 +3150,7 @@
       const lvl = question.difficulty;
       els.uiRoundDifficulty.querySelector(".label-frage").textContent = String(state.round);
       els.uiRoundDifficulty.querySelector(".label-level").textContent = levelLabels[lvl] || "Leicht";
-      els.uiRoundDifficulty.className = `tb-chips level-${lvl}`;
+      els.uiRoundDifficulty.className = `tb-chips hidden level-${lvl}`;
 
       els.uiScore.textContent = `${state.totalScore} in Folge`;
       els.questionText.textContent = question.question;
@@ -3186,6 +3190,7 @@
         state.timerValue -= 1;
         els.uiTimerNum.textContent = String(Math.max(0, state.timerValue));
         els.uiTimer.classList.toggle("is-penalty", state.timerValue <= 5);
+        updateTimerBar(state.timerValue);
         if (state.timerValue <= 0) {
           clearInterval(state.timerId);
           if (token !== state.flowToken) return;
@@ -3194,11 +3199,31 @@
       }, 1000);
     }
 
+    // Aktualisiert die horizontale Timer-Leiste: Breite = Anteil der
+    // Restzeit an CLASSIC_TIME_LIMIT, keine Sekundenzahl. In den letzten 5
+    // Sekunden blendet die Füllfarbe langsam (pro Tick + CSS-Transition) von
+    // Blau nach Rot über, statt abrupt umzuschalten.
+    function updateTimerBar(remaining) {
+      if (!els.uiTimerFill) return;
+      const clamped = Math.max(0, remaining);
+      els.uiTimerFill.style.width = `${(clamped / CLASSIC_TIME_LIMIT) * 100}%`;
+      if (clamped > 5) {
+        els.uiTimerFill.style.backgroundColor = "";
+      } else {
+        const t = Math.max(0, Math.min(1, (5 - clamped) / 5));
+        const from = [30, 136, 229];   // var(--primary) #1e88e5
+        const to = [255, 82, 82];      // var(--red-b) #ff5252
+        const mixed = from.map((c, i) => Math.round(c + (to[i] - c) * t));
+        els.uiTimerFill.style.backgroundColor = `rgb(${mixed.join(",")})`;
+      }
+    }
+
     function startTimerClassic(token) {
       clearInterval(state.timerId);
       state.timerValue = CLASSIC_TIME_LIMIT;
       els.uiTimerNum.textContent = String(state.timerValue);
       els.uiTimer.classList.remove("is-penalty");
+      updateTimerBar(state.timerValue);
       tickTimerClassic(token);
     }
 
@@ -3296,8 +3321,9 @@
       els.answers.appendChild(correctRow);
 
       const richtigText = randomRichtigText(state.currentQuestion.difficulty);
+      const currentNiveau = DIFFICULTY_KEY_FOR_VARIANTEN[state.currentQuestion.difficulty] || "leicht";
       const soloScoreLine = state.gameMode === "classic"
-        ? `<br><span class="result-points-sub"><span class="result-label">Score für Frage:</span> <span class="result-value result-value-solo ${soloScoreEffectClass(state.lastClassicSoloPoints)}">${state.lastClassicSoloPoints}</span></span>`
+        ? `<br><span class="result-points-sub"><span class="result-label">Score für Frage ${state.round} (${currentNiveau}):</span> <span class="result-value result-value-solo ${soloScoreEffectClass(state.lastClassicSoloPoints)}">${state.lastClassicSoloPoints}</span></span>`
         : "";
       els.resultPoints.innerHTML = `<span class="result-feedback-text" id="result-richtig-headline"></span><br><span class="result-points-sub"><span class="result-label">Korrekte Antworten:</span> <span class="result-value result-value-correct">${state.totalScore}</span></span>${soloScoreLine}`;
       els.resultPoints.classList.remove("hidden");
@@ -3306,6 +3332,14 @@
 
       els.resultTotal.classList.add("hidden");
       els.resultInfo.classList.add("hidden");
+
+      // Schwierigkeit der nächsten Frage einmalig vorausberechnen und cachen,
+      // damit der "Weiter"-Button-Text und die tatsächlich geladene Frage
+      // (pickQuestion() verwendet denselben gecachten Wert) übereinstimmen.
+      const nextDifficulty = getNextDifficulty();
+      state.nextDifficultyPreview = nextDifficulty;
+      const nextNiveau = DIFFICULTY_KEY_FOR_VARIANTEN[nextDifficulty] || "leicht";
+      els.continueBtn.textContent = `Weiter mit Frage ${state.round + 1} (${nextNiveau})`;
 
       showContinueDisabledThenEnable(false);
     }
