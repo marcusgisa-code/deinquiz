@@ -2540,7 +2540,9 @@
       fiftyEffect1: new Audio("Sound/50-50-1--770971__poundsounduk__ui_pop_up_03.wav"),
       fiftyEffect2: new Audio("Sound/50-50-2--825573__akelley6__menu-option.wav"),
       fiftyEffect3: new Audio("Sound/50-50-3--858836__tony_cannoli__pop-sound.wav"),
-      timerLast5: new Audio("Sound/timer_lasts_5-econds.wav")
+      timerLast5: new Audio("Sound/timer_lasts_5-econds.wav"),
+      correctAndNewFiftyJoker: new Audio("Sound/correct_and_new_50-50_joker.wav"),
+      correctAndNewSkipJoker: new Audio("Sound/correct_and_new_SkipJoker.wav")
     };
 
     // Tatsächliche Laufzeit der Datei (gemessen, nicht die 5s aus dem
@@ -3335,7 +3337,6 @@
     }
 
     function classicHandleCorrect() {
-      playSound("correct");
       state.totalScore += 1;
       state.correctStreak += 1;
       state.questionsPlayed += 1;
@@ -3352,9 +3353,13 @@
         state.lastClassicSoloPoints = points;
       }
 
+      let awardedSkipJoker = false;
+      let awardedFiftyJoker = false;
+
       // Alle 5 richtig beantworteten Fragen gibt's einen zusätzlichen Joker
       if (state.correctAnswers % 5 === 0) {
         state.jokersLeft += 1;
+        awardedSkipJoker = true;
         showJokerAwardAnimation("5 Richtig → +1 Joker");
       }
 
@@ -3364,8 +3369,21 @@
         state.hardCorrectCount += 1;
         if (state.hardCorrectCount % 3 === 0) {
           state.fiftyFiftyLeft += 1;
+          awardedFiftyJoker = true;
           showJokerAwardAnimation("3× Schwer richtig → +1 50:50-Joker");
         }
+      }
+
+      // Sonderfall-Sounds: Wird bei dieser richtigen Antwort ein neuer Joker
+      // gewonnen, ersetzt dessen Sound den normalen "Richtig"-Sound. Bei
+      // (seltenem) gleichzeitigem Gewinn beider Joker-Arten hat der
+      // 50:50-Joker-Sound Vorrang.
+      if (awardedFiftyJoker) {
+        playSound("correctAndNewFiftyJoker");
+      } else if (awardedSkipJoker) {
+        playSound("correctAndNewSkipJoker");
+      } else {
+        playSound("correct");
       }
 
       if (els.uiScore) els.uiScore.textContent = `${state.totalScore} in Folge`;
