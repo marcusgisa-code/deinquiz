@@ -1,7 +1,7 @@
-name = "trivia-quiz-api"
+name = "deinquiz-api"
 main = "src/index.js"
 compatibility_date = "2024-01-01"
 
 [[kv_namespaces]]
 binding = "QUESTIONS_KV"
-id = "7c3d06bdc2eb447ba5c66099ff3c3916"
+id = "5444da7e2bfc4f5d8477f2a81d000294"
