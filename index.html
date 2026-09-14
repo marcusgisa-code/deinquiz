@@ -845,6 +845,12 @@
       transition: width 0.9s linear, background-color 0.9s linear;
     }
 
+    /* Wird exakt in dem Moment gesetzt, in dem der timerLast5-Sound startet
+       (siehe scheduleTimerSound()) - Leiste wird rot. */
+    .timer-bar-fill.is-urgent {
+      background: var(--red-b);
+    }
+
     /* progress-track removed */
 
     .question-box {
@@ -2422,7 +2428,9 @@
       pendingGameOver: false,
       classicSoloScore: 0,
       lastClassicSoloPoints: 0,
-      nextDifficultyPreview: null
+      nextDifficultyPreview: null,
+      timerSoundTimeoutId: null,
+      timerSoundTriggered: false
     };
 
     const screens = {
@@ -2512,8 +2520,13 @@
       skipEffect3: new Audio("Sound/Skip_Question_Effect_3_670185__robinhood76__11342-breath-ghost-vanish.wav"),
       fiftyEffect1: new Audio("Sound/50-50-1--770971__poundsounduk__ui_pop_up_03.wav"),
       fiftyEffect2: new Audio("Sound/50-50-2--825573__akelley6__menu-option.wav"),
-      fiftyEffect3: new Audio("Sound/50-50-3--858836__tony_cannoli__pop-sound.wav")
+      fiftyEffect3: new Audio("Sound/50-50-3--858836__tony_cannoli__pop-sound.wav"),
+      timerLast5: new Audio("Sound/timer_lasts_5-econds.wav")
     };
+
+    // Tatsächliche Laufzeit der Datei (gemessen, nicht die 5s aus dem
+    // Dateinamen) - damit der Sound exakt endet, wenn der Timer abläuft.
+    const TIMER_SOUND_DURATION = 4.891813;
 
     function playSound(name) {
       if (state.soundMuted) return;
@@ -2605,9 +2618,14 @@
       state.pendingGameOver = false;
       els.uiTimerNum.textContent = "0";
       els.uiTimer.classList.remove("is-penalty");
+      clearTimeout(state.timerSoundTimeoutId);
+      state.timerSoundTriggered = false;
+      sounds.timerLast5.pause();
+      sounds.timerLast5.currentTime = 0;
       if (els.uiTimerFill) {
         els.uiTimerFill.style.width = "100%";
         els.uiTimerFill.style.backgroundColor = "";
+        els.uiTimerFill.classList.remove("is-urgent");
       }
       els.continueBtn.textContent = "Weiter";
       if (els.uiWert) { els.uiWert.textContent = "–"; }
@@ -2678,6 +2696,25 @@
 
     function stopTimer() {
       clearInterval(state.timerId);
+      clearTimeout(state.timerSoundTimeoutId);
+      sounds.timerLast5.pause();
+      sounds.timerLast5.currentTime = 0;
+    }
+
+    // Plant den "letzte 5 Sekunden"-Sound so, dass er exakt endet, wenn der
+    // Timer abläuft (basiert auf der gemessenen TIMER_SOUND_DURATION statt
+    // auf den vollen Sekunden-Ticks, für echte Sub-Sekunden-Präzision).
+    // Färbt die Timer-Leiste im selben Moment rot ein, in dem der Sound
+    // einsetzt.
+    function scheduleTimerSound() {
+      clearTimeout(state.timerSoundTimeoutId);
+      if (state.timerSoundTriggered) return;
+      const delayMs = Math.max(0, (state.timerValue - TIMER_SOUND_DURATION) * 1000);
+      state.timerSoundTimeoutId = window.setTimeout(() => {
+        state.timerSoundTriggered = true;
+        playSound("timerLast5");
+        if (els.uiTimerFill) els.uiTimerFill.classList.add("is-urgent");
+      }, delayMs);
     }
 
     function getNextDifficulty() {
@@ -3207,23 +3244,20 @@
       if (!els.uiTimerFill) return;
       const clamped = Math.max(0, remaining);
       els.uiTimerFill.style.width = `${(clamped / CLASSIC_TIME_LIMIT) * 100}%`;
-      if (clamped > 5) {
-        els.uiTimerFill.style.backgroundColor = "";
-      } else {
-        const t = Math.max(0, Math.min(1, (5 - clamped) / 5));
-        const from = [30, 136, 229];   // var(--primary) #1e88e5
-        const to = [255, 82, 82];      // var(--red-b) #ff5252
-        const mixed = from.map((c, i) => Math.round(c + (to[i] - c) * t));
-        els.uiTimerFill.style.backgroundColor = `rgb(${mixed.join(",")})`;
-      }
+      // Die Farbe wird nicht mehr hier pro Tick berechnet, sondern über die
+      // .is-urgent-Klasse exakt im selben Moment umgeschaltet, in dem
+      // scheduleTimerSound() den timerLast5-Sound startet (siehe dort).
     }
 
     function startTimerClassic(token) {
       clearInterval(state.timerId);
       state.timerValue = CLASSIC_TIME_LIMIT;
+      state.timerSoundTriggered = false;
+      if (els.uiTimerFill) els.uiTimerFill.classList.remove("is-urgent");
       els.uiTimerNum.textContent = String(state.timerValue);
       els.uiTimer.classList.remove("is-penalty");
       updateTimerBar(state.timerValue);
+      scheduleTimerSound();
       tickTimerClassic(token);
     }
 
@@ -3231,6 +3265,7 @@
     // Pause während der 50:50-Joker-Animation) statt ihn zurückzusetzen.
     function resumeTimerClassic(token) {
       clearInterval(state.timerId);
+      scheduleTimerSound();
       tickTimerClassic(token);
     }
 
