@@ -242,30 +242,16 @@
 
     /* Joker-Buttons: linksbündig zu den Antwortoptionen gestapelt (nicht
        zentriert), 50:50 zuerst/kompakter, Skip-Joker darunter. */
-    /* Neue Zeile unter den Antwortoptionen: links Info-Karte (Logo,
-       Kategorie, Frage-Nr./Niveau), rechts die Joker-Buttons - zwei
-       gleich breite Spalten statt der zuvor freistehenden Joker-Buttons. */
+    /* Zeile unter den Antwortoptionen: die Joker-Buttons, volle Breite
+       (Logo/Kategorie/Frage-Nr. sitzen jetzt oben in der Topbar). */
     .below-answers-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      align-items: start;
-      gap: 14px;
       margin: 18px 0;
-    }
-
-    .quiz-info-card {
-      min-width: 0;
-      background: #0f1b33;
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 16px;
-      padding: 16px 18px;
     }
 
     .quiz-info-logo {
       display: flex;
       align-items: center;
       gap: 8px;
-      margin-bottom: 12px;
     }
 
     .quiz-info-logo-icon {
@@ -290,12 +276,6 @@
 
     .quiz-info-logo-text b {
       font-weight: 800;
-    }
-
-    .quiz-info-divider {
-      border: none;
-      border-top: 1px solid rgba(255,255,255,0.1);
-      margin: 0 0 12px;
     }
 
     .quiz-info-category {
@@ -836,14 +816,26 @@
       z-index: 1;
     }
 
-    /* ── Topbar: new 3-column header ── */
-    /* ── Topbar ── */
+    /* ── Topbar: Logo/Kategorie/Frage-Nr. oben, Timer-Leiste darunter ── */
     .topbar {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .tb-info-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      margin-bottom: 20px;
+    }
+
+    .tb-timer-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
     }
 
     /* Left: player pill */
@@ -1531,6 +1523,19 @@
 
     <section id="screen-quiz" class="screen quiz-screen hidden">
       <div class="topbar">
+        <div class="tb-info-row">
+          <div class="quiz-info-logo">
+            <span class="quiz-info-logo-icon">?</span>
+            <span class="quiz-info-logo-text">Dein<b>Quiz</b></span>
+          </div>
+          <div class="quiz-info-chips">
+            <span class="quiz-info-chip" id="ui-question-chip">Frage 1</span>
+            <span class="quiz-info-chip quiz-info-chip-level" id="ui-level-chip">leicht</span>
+          </div>
+        </div>
+
+        <div class="quiz-info-category" id="ui-category">Allgemeinwissen</div>
+
         <div class="tb-player hidden">
           <div class="tb-avatar" id="ui-avatar">?</div>
           <div>
@@ -1554,15 +1559,17 @@
           </div>
         </div>
 
-        <div class="timer-bar-track" id="ui-timer">
-          <div class="timer-bar-fill" id="ui-timer-fill"></div>
-          <span class="tb-timer-num hidden" id="ui-timer-num">0</span>
-          <span class="tb-timer-sek hidden">Sek</span>
-        </div>
+        <div class="tb-timer-row">
+          <div class="timer-bar-track" id="ui-timer">
+            <div class="timer-bar-fill" id="ui-timer-fill"></div>
+            <span class="tb-timer-num hidden" id="ui-timer-num">0</span>
+            <span class="tb-timer-sek hidden">Sek</span>
+          </div>
 
-        <button id="mute-btn" class="tb-mute" type="button" aria-label="Sound aus">
-          <span id="mute-icon">🔊</span>
-        </button>
+          <button id="mute-btn" class="tb-mute" type="button" aria-label="Sound aus">
+            <span id="mute-icon">🔊</span>
+          </button>
+        </div>
       </div>
 
 <div class="question-box">
@@ -1572,19 +1579,6 @@
       <div id="answers" class="answers"></div>
 
       <div class="below-answers-row">
-        <div class="quiz-info-card">
-          <div class="quiz-info-logo">
-            <span class="quiz-info-logo-icon">?</span>
-            <span class="quiz-info-logo-text">Dein<b>Quiz</b></span>
-          </div>
-          <hr class="quiz-info-divider" />
-          <div class="quiz-info-category" id="ui-category">Allgemeinwissen</div>
-          <div class="quiz-info-chips">
-            <span class="quiz-info-chip" id="ui-question-chip">Frage 1</span>
-            <span class="quiz-info-chip quiz-info-chip-level" id="ui-level-chip">leicht</span>
-          </div>
-        </div>
-
         <div class="jokers">
           <div id="fifty-wrap" class="joker-wrap hidden">
             <button id="fifty-btn" class="joker-btn fifty-btn" type="button">
