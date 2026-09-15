@@ -311,19 +311,26 @@
     .jokers {
       min-width: 0;
       display: flex;
-      flex-direction: column;
-      align-items: stretch;
+      flex-direction: row;
+      align-items: flex-start;
       gap: 14px;
     }
 
     .joker-wrap {
-      width: 100%;
+      flex: 1 1 0;
       min-width: 0;
     }
 
+    /* Schwebe-Effekt (siehe mockups/joker_floating_demo.html): sanfte
+       Idle-Levitation + pulsierender Kontaktschatten, beide Joker zeitlich
+       versetzt (--float-dur/--float-delay) damit sie nicht synchron
+       "atmen". Hover pausiert die Idle-Animation und hebt den Button
+       stärker an; :active gibt kurzes Press-Feedback. */
     .joker-btn {
       --jc: #a78bfa;
       --jc-glow: #8b5cf6;
+      --float-dur: 3.6s;
+      --float-delay: -1.1s;
       position: relative;
       display: flex;
       align-items: center;
@@ -336,11 +343,52 @@
       width: 100%;
       min-width: 0;
       transition: box-shadow 0.2s ease, background 0.2s ease;
+      animation: jokerFloat var(--float-dur) ease-in-out infinite;
+      animation-delay: var(--float-delay);
+    }
+
+    .joker-btn::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      bottom: -10px;
+      width: 60%;
+      height: 10px;
+      transform: translateX(-50%);
+      border-radius: 50%;
+      background: radial-gradient(closest-side, color-mix(in srgb, var(--jc-glow) 55%, transparent), transparent 70%);
+      filter: blur(4px);
+      pointer-events: none;
+      animation: jokerShadowPulse var(--float-dur) ease-in-out infinite;
+      animation-delay: var(--float-delay);
+    }
+
+    @keyframes jokerFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-7px); }
+    }
+
+    @keyframes jokerShadowPulse {
+      0%, 100% { transform: translateX(-50%) scale(1); opacity: 0.85; }
+      50% { transform: translateX(-50%) scale(0.72); opacity: 0.4; }
     }
 
     .joker-btn:hover {
+      animation-play-state: paused;
+      transform: translateY(-12px);
       box-shadow: 0 0 22px -2px var(--jc-glow);
       background: rgba(255,255,255,0.06);
+    }
+
+    .joker-btn:hover::after {
+      animation-play-state: paused;
+      transform: translateX(-50%) scale(0.6);
+      opacity: 0.28;
+    }
+
+    .joker-btn:active {
+      transform: translateY(-3px) scale(0.97) !important;
+      transition: transform 0.08s ease-out;
     }
 
     .joker-icon {
@@ -367,6 +415,8 @@
     .fifty-btn {
       --jc: #5eead4;
       --jc-glow: #2dd4bf;
+      --float-dur: 3.1s;
+      --float-delay: 0s;
     }
 
     .answer-row.eliminated {
