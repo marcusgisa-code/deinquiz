@@ -316,8 +316,11 @@
       gap: 14px;
     }
 
+    /* Feste Breite statt flex:1 1 0 - sonst würde "Antwort streichen" auf
+       volle Breite wachsen, solange der Skip-Joker (3s später) noch nicht
+       da ist, und beim Nachrücken sichtbar springen/schrumpfen. */
     .joker-wrap {
-      flex: 1 1 0;
+      flex: 0 0 calc(50% - 7px);
       min-width: 0;
     }
 
@@ -2373,6 +2376,32 @@
       if (count > 0) playSound("reveal");
     }
 
+    // Klassisch-Modus: Antwortoption Buchstabe für Buchstabe eintippen,
+    // insgesamt aber maximal TYPEWRITER_MAX_MS - kurze Antworten tippen im
+    // normalen Tempo, lange werden gestaucht, damit die Obergrenze nie reißt.
+    // Gibt false zurück, wenn die Runde währenddessen ungültig wurde (z.B.
+    // durch Skip-Joker oder Frage-Wechsel), damit der Aufrufer abbrechen kann.
+    const TYPEWRITER_STEP_MS = 25;
+    const TYPEWRITER_MAX_MS = 500;
+
+    async function revealAnswerWithTypewriter(index, token) {
+      const row = createAnswerRow(index, "");
+      const answerTextEl = row.querySelector(".answer-text");
+      const fullText = state.currentQuestion.answers[index];
+      els.answers.appendChild(row);
+      playSound("reveal");
+
+      if (!fullText) return token === state.flowToken;
+
+      const stepMs = Math.min(TYPEWRITER_STEP_MS, TYPEWRITER_MAX_MS / fullText.length);
+      for (let i = 1; i <= fullText.length; i += 1) {
+        if (token !== state.flowToken) return false;
+        answerTextEl.textContent = fullText.slice(0, i);
+        await wait(stepMs);
+      }
+      return token === state.flowToken;
+    }
+
     function difficultyLabel(difficulty) {
       return DIFFICULTY_LABELS[difficulty] || "einfach";
     }
@@ -2490,8 +2519,9 @@
       els.jokerWrap.classList.add("fade-in");
     }
 
-    // 50:50-Joker: in allen drei Spielmodi verfügbar, erscheint zusammen mit
-    // dem Skip-Joker.
+    // 50:50-Joker: in allen drei Spielmodi verfügbar. Im Klassisch-Modus
+    // erscheint er 3s nach Timerstart, der Skip-Joker erst nach 7s (siehe
+    // loadRoundClassic()).
     function revealFiftyFiftyButton() {
       if (state.roundAnswered) return;
       if (state.fiftyFiftyLeft <= 0) return;
@@ -2762,25 +2792,32 @@
 
       await wait(800);
       if (token !== state.flowToken) return;
-      state.currentVisibleAnswers = 1;
-      renderVisibleAnswers(1);
 
-      await wait(1000);
-      if (token !== state.flowToken) return;
-      state.currentVisibleAnswers = 2;
-      renderVisibleAnswers(2);
+      // Jede Antwortoption tippt sich ein (max. TYPEWRITER_MAX_MS), danach
+      // 500ms Standzeit - auch nach der letzten Option - bevor es weitergeht.
+      for (let i = 0; i < question.answers.length; i += 1) {
+        state.currentVisibleAnswers = i + 1;
+        const stillValid = await revealAnswerWithTypewriter(i, token);
+        if (!stillValid) return;
 
-      await wait(1000);
-      if (token !== state.flowToken) return;
-      state.currentVisibleAnswers = 3;
-      renderVisibleAnswers(3);
+        await wait(500);
+        if (token !== state.flowToken) return;
+      }
 
       startTimerClassic(token);
 
-      await wait(1600);
-      if (token !== state.flowToken) return;
-      revealJokerButton();
-      revealFiftyFiftyButton();
+      // Joker erscheinen gestaffelt nach Timerstart statt gleichzeitig:
+      // 50:50 ("Antwort streichen") nach 3s, Skip ("Frage überspringen")
+      // erst nach 7s.
+      window.setTimeout(() => {
+        if (token !== state.flowToken) return;
+        revealFiftyFiftyButton();
+      }, 3000);
+
+      window.setTimeout(() => {
+        if (token !== state.flowToken) return;
+        revealJokerButton();
+      }, 7000);
     }
 
     function tickTimerClassic(token) {
