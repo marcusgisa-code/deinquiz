@@ -308,6 +308,20 @@
       color: var(--accent-soft);
     }
 
+    /* Ampelfarben je Schwierigkeitsgrad (siehe Mockup_FrageRichtig.png). */
+    .quiz-info-chip-level.level-1 {
+      border-color: #22c55e;
+      color: #22c55e;
+    }
+    .quiz-info-chip-level.level-2 {
+      border-color: var(--accent);
+      color: var(--accent-soft);
+    }
+    .quiz-info-chip-level.level-3 {
+      border-color: var(--red-b);
+      color: var(--red-b);
+    }
+
     .jokers {
       min-width: 0;
       display: flex;
@@ -1348,45 +1362,8 @@
       font-size: 23px;
     }
 
-    .result-points-sub {
-      display: inline-block;
-      margin-top: 8px;
-      font-size: 26px;
-      color: #ffffff;
-      -webkit-text-stroke: 2px var(--accent-soft);
-      text-shadow: none;
-    }
-
-    /* Label-Teil ("Korrekte Antworten:" / "Score für Frage:") in gleicher
-       Fontgröße wie die Frage selbst, weiß, fett, ohne Outline; die Zahl
-       behält Fontgröße und Outline von .result-points-sub unverändert.
-       margin-right verdoppelt den Abstand zur Zahl (zusätzlich zum
-       Leerzeichen im Text ~5.4px -> Gesamtabstand ~10.8px). */
-    .result-label {
-      font-size: 23px;
-      color: #ffffff;
-      font-weight: 700;
-      -webkit-text-stroke: 0;
-      margin-right: 5px;
-    }
-
-    .result-value {
-      display: inline-block;
-    }
-
-    /* Zahl bei "Korrekte Antworten" etwas kleiner als die Standard-Zahl-Größe
-       von .result-points-sub (26px). */
-    .result-value-correct {
-      font-size: 22px;
-    }
-
-    /* Zahl bei "Score für Frage": Fontfarbe = Outline-Farbe (statt Weiß). */
-    .result-value-solo {
-      color: var(--accent-soft);
-    }
-
-    /* Effekte für die Zahl hinter "Score für Frage", gestaffelt nach
-       Punktzahl (nur Modus Klassisch ohne KI-Fragen). */
+    /* Effekte für den Punkte-Kreis auf dem Korrekt-Screen, gestaffelt nach
+       Zahlengröße (Punkte in Competition, Serie in Training). */
     @keyframes scoreFadeSlow {
       0%, 100% { opacity: 1; }
       50% { opacity: 0.25; }
@@ -1435,6 +1412,286 @@
       font-style: normal;
     }
 
+    /* ── Korrekt-Screen: Badges, Divider, Punkte-Kreis, Konfetti (Referenz:
+       korrekt-screen.html) - alles innerhalb von #result-points, damit die
+       bestehende .below-panel-Struktur (restoreBelowPanelStructure()) und
+       ihr fade-in/hidden-Handling unverändert bleiben. ── */
+    #result-points {
+      position: relative;
+      align-self: stretch;
+      width: 100%;
+    }
+
+    .result-divider {
+      width: 100%;
+      border: none;
+      border-top: 1px dashed rgba(255,255,255,0.14);
+      margin: 0 0 14px;
+    }
+
+    .result-confetti-layer {
+      position: absolute;
+      inset: -10px -10px auto -10px;
+      height: 0;
+      overflow: visible;
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    .result-confetti {
+      position: absolute;
+      top: -10px;
+      width: 7px;
+      height: 12px;
+      border-radius: 2px;
+      opacity: 0;
+    }
+
+    @keyframes resultConfettiFall {
+      0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(260px) rotate(540deg); opacity: 0; }
+    }
+
+    .points-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transform: translateY(14px) scale(0.9);
+      animation: resultPopUp 0.6s 0.15s cubic-bezier(.24,1.2,.4,1) forwards;
+      transform-origin: center;
+    }
+
+    .points-badge {
+      width: 84px;
+      height: 84px;
+      flex: none;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: conic-gradient(from -40deg, var(--accent), var(--accent-soft), var(--accent));
+      box-shadow: 0 0 0 6px rgba(255,183,77,0.10), 0 18px 36px -10px rgba(255,152,0,0.5);
+      position: relative;
+    }
+
+    .points-badge::before {
+      content: "";
+      position: absolute;
+      inset: 5px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 30%, #16273c, var(--shell-2) 75%);
+    }
+
+    .points-num {
+      position: relative;
+      z-index: 1;
+      font-weight: 800;
+      font-size: 28px;
+      line-height: 1;
+      color: #fff;
+      text-shadow: 0 0 18px rgba(255,152,0,0.6);
+    }
+
+    .result-headline {
+      margin: 4px 0 30px;
+      transition: margin-bottom 2s ease-out;
+    }
+
+    .result-headline .result-feedback-text {
+      font-weight: 800;
+      background: linear-gradient(100deg, #ffe19b 20%, #fff 40%, var(--accent) 60%, #ffe19b 80%);
+      background-size: 220% auto;
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      animation: resultShine 3.2s 1.2s linear infinite;
+    }
+
+    /* Punkte-Zeile: Frage-Badge links, Kreis mittig, Label rechts - bleibt
+       während der ganzen Sequenz an derselben Stelle stehen (kein
+       Herüberrutschen mehr, siehe Nutzer-Feedback). In Phase 2 wechselt nur
+       der Badge-Text ("Frage N" -> "Gesamt:") und der Kreis wächst während
+       er auf die Gesamtpunktzahl hochzählt (siehe classicHandleCorrect()).
+       Grid statt Flex+justify-center: "Gesamt:" (schmal) und "Gehirnzellen"
+       (breit) sind unterschiedlich lang, mit Flex würde das den Kreis aus
+       der wahren Zeilenmitte drücken. Die äußere 1fr/1fr-Spalte hält den
+       Kreis exakt zentriert, wie im Mockup - und damit exakt unter der
+       (text-align:center) Headline und über dem Stat-Text. */
+    .result-lower-wrap {
+      position: relative;
+    }
+
+    /* Gehirnzellen-Schwarm (Referenz: gehirnzellen_schwarm_282.html) - ein
+       Partikel pro Gesamtpunkt, hinter Kreis + Stat-Zeile, über deren
+       gemeinsame Fläche hinaus etwas ausgebeult für die "Wolken"-Optik der
+       Vorlage. Startet unsichtbar und fadet ein, sobald spawnGehirnzellenSwarm()
+       beim Erscheinen der Gesamtpunktzahl die Zellen einfügt. */
+    .gehirnzellen-swarm {
+      position: absolute;
+      left: -8%;
+      right: -8%;
+      top: -28px;
+      bottom: -14px;
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 1.8s ease;
+    }
+
+    .gehirnzellen-swarm.is-visible {
+      opacity: 1;
+    }
+
+    .gz-cell {
+      position: absolute;
+      width: var(--size);
+      height: var(--size);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      opacity: var(--op);
+      pointer-events: none;
+      background: radial-gradient(circle at 50% 45%,
+          #ffffff 0%, #fff2d8 12%, #ffcf8a 30%, #ff9a3d 55%, #e35a12 78%, rgba(200,50,10,0) 100%);
+      filter:
+        drop-shadow(0 0 2px rgba(255,255,255,0.9))
+        drop-shadow(0 0 5px rgba(255,150,50,0.85))
+        drop-shadow(0 0 9px rgba(255,90,20,0.55));
+      animation:
+        gzDrift var(--dur) ease-in-out var(--delay) infinite,
+        gzPulse var(--pdur) ease-in-out var(--pdelay) infinite;
+    }
+
+    @keyframes gzDrift {
+      0%, 100% { transform: translate(-50%,-50%) translate(0,0); }
+      25%      { transform: translate(-50%,-50%) translate(calc(var(--ax) * 1), calc(var(--ay) * -1)); }
+      50%      { transform: translate(-50%,-50%) translate(calc(var(--ax) * -0.8), calc(var(--ay) * -1.5)); }
+      75%      { transform: translate(-50%,-50%) translate(calc(var(--ax) * -1.2), calc(var(--ay) * 0.5)); }
+    }
+
+    @keyframes gzPulse {
+      0%, 100% { opacity: var(--op); }
+      50%      { opacity: calc(var(--op) * 0.55); }
+    }
+
+    .result-score-row {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      column-gap: 30px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .result-frage-badge {
+      justify-self: end;
+      transition: opacity 0.25s ease;
+    }
+
+    .result-side-label {
+      justify-self: start;
+      font-size: 21px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .result-stat-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      color: var(--text-muted);
+      font-size: 15px;
+      margin: 24px 0 34px;
+      transition: margin-top 2s ease-out;
+      position: relative;
+      z-index: 1;
+    }
+
+    .result-stat-check {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #0aff2e;
+      color: #062015;
+      font-size: 11px;
+      font-weight: 900;
+      flex: none;
+    }
+
+    .result-stat-num {
+      font-weight: 700;
+      color: #7cffa0;
+      font-size: 16px;
+    }
+
+    @keyframes resultPopUp {
+      from { opacity: 0; transform: translateY(14px) scale(0.9); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes resultFadeUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes resultShine {
+      from { background-position: 0% center; }
+      to { background-position: 220% center; }
+    }
+
+    /* Checkmark-Feld am Zeilenende der aufgedeckten richtigen Antwort -
+       struktureller Bestandteil jeder Antwortzeile (siehe createAnswerRow),
+       aber nur sichtbar, wenn .correct-state gesetzt ist. */
+    .answer-row .answer-check {
+      display: none;
+    }
+    .answer-row.correct-state .answer-check {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 54px;
+      flex: none;
+      background: #0d2236;
+    }
+    .answer-row.correct-state .answer-check .check-circle {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #0aff2e;
+      color: #062015;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 13px;
+      transform: scale(0);
+      animation: resultCheckPop 0.4s 0.45s cubic-bezier(.34,1.56,.64,1) forwards;
+    }
+    @keyframes resultCheckPop {
+      to { transform: scale(1); }
+    }
+
+    /* CTA-Pfeil + sanfter Puls auf dem "Weiter"-Button, sobald er nach der
+       Disabled-Cooldown klickbar ist. */
+    #continue-btn::after {
+      content: "\2192";
+      display: inline-block;
+      margin-left: 10px;
+      transition: transform 0.2s ease;
+    }
+    #continue-btn:hover::after {
+      transform: translateX(4px);
+    }
+    @keyframes ctaPulse {
+      0%, 100% { box-shadow: 0 12px 26px rgba(0,0,0,0.55), 0 0 18px rgba(255,152,0,0.55); }
+      50% { box-shadow: 0 12px 30px rgba(0,0,0,0.6), 0 0 28px rgba(255,152,0,0.85); }
+    }
+    #continue-btn:not(.is-disabled):not(.hidden) {
+      animation: ctaPulse 2.4s ease-in-out infinite;
+    }
+
     .continue-btn {
       min-width: 220px;
       min-height: unset;
@@ -1470,8 +1727,13 @@
         font-size: 20px;
       }
 
-      .result-label {
-        font-size: 20px;
+      .points-badge {
+        width: 72px;
+        height: 72px;
+      }
+
+      .points-num {
+        font-size: 24px;
       }
 
       .answer-row {
@@ -1612,7 +1874,7 @@
           </div>
         </div>
 
-        <div class="tb-timer-row">
+        <div class="tb-timer-row" id="tb-timer-row">
           <div class="timer-bar-track" id="ui-timer">
             <div class="timer-bar-fill" id="ui-timer-fill"></div>
             <span class="tb-timer-num hidden" id="ui-timer-num">0</span>
@@ -1946,6 +2208,76 @@
       step();
     }
 
+    // Zählt eine Zahl auf dem Korrekt-Screen animiert von 0 zum Zielwert
+    // hoch (linear - liest sich als "1, 2, 3, ..." statt als beschleunigte
+    // Reveal-Animation), statt sie einfach hinzuschreiben.
+    function animateResultCount(el, target, duration = 900, delay = 500) {
+      if (!el) return;
+      window.setTimeout(() => {
+        const start = performance.now();
+        function tick(now) {
+          const p = Math.min((now - start) / duration, 1);
+          el.textContent = String(Math.round(p * target));
+          if (p < 1) requestAnimationFrame(tick);
+        }
+        requestAnimationFrame(tick);
+      }, delay);
+    }
+
+    const RESULT_CONFETTI_COLORS = ["#ffb74d", "#0aff2e", "#378adb", "#a78bfa", "#5eead4"];
+
+    function spawnResultConfetti(layer) {
+      if (!layer) return;
+      layer.innerHTML = "";
+      for (let i = 0; i < 22; i += 1) {
+        const piece = document.createElement("div");
+        piece.className = "result-confetti";
+        const color = RESULT_CONFETTI_COLORS[i % RESULT_CONFETTI_COLORS.length];
+        const left = Math.random() * 100;
+        const delay = 300 + Math.random() * 400;
+        const duration = 1300 + Math.random() * 900;
+        const rot = Math.random() * 360;
+        piece.style.left = `${left}%`;
+        piece.style.background = color;
+        piece.style.transform = `rotate(${rot}deg)`;
+        piece.style.animation = `resultConfettiFall ${duration}ms ease-in ${delay}ms forwards`;
+        layer.appendChild(piece);
+      }
+    }
+
+    // Gehirnzellen-Schwarm hinter der Gesamtpunktzahl (Referenz:
+    // gehirnzellen_schwarm_282.html) - ein Partikel pro Gesamtpunkt,
+    // randomisiert in Position/Größe/Timing wie in der Vorlage. Auf
+    // GZ_MAX_CELLS gedeckelt, damit ein sehr langes Spiel nicht Hunderte
+    // zusätzlicher animierter Elemente anhäuft.
+    const GZ_MAX_CELLS = 400;
+
+    function spawnGehirnzellenSwarm(container, count) {
+      if (!container) return;
+      const capped = Math.max(0, Math.min(count, GZ_MAX_CELLS));
+      const frag = document.createDocumentFragment();
+      for (let i = 0; i < capped; i += 1) {
+        const cell = document.createElement("div");
+        cell.className = "gz-cell";
+        const size = (6 + Math.random() * 5).toFixed(1);
+        const left = (Math.random() * 100).toFixed(2);
+        const top = (Math.random() * 100).toFixed(2);
+        const ax = (8 + Math.random() * 14).toFixed(1);
+        const ay = (7 + Math.random() * 11).toFixed(1);
+        const dur = (6 + Math.random() * 5.5).toFixed(2);
+        const delay = (-(Math.random() * dur)).toFixed(2);
+        const op = (0.65 + Math.random() * 0.31).toFixed(2);
+        const pdur = (1.6 + Math.random() * 1.4).toFixed(2);
+        const pdelay = (-(Math.random() * 2.5)).toFixed(2);
+        cell.style.cssText = `left:${left}%; top:${top}%; --size:${size}px; --ax:${ax}px; --ay:${ay}px; --dur:${dur}s; --delay:${delay}s; --op:${op}; --pdur:${pdur}s; --pdelay:${pdelay}s;`;
+        frag.appendChild(cell);
+      }
+      container.innerHTML = "";
+      container.appendChild(frag);
+      void container.offsetWidth;
+      container.classList.add("is-visible");
+    }
+
     const CLASSIC_TIME_LIMIT = 25;
 
     const state = {
@@ -2008,6 +2340,7 @@
       uiTimer: document.getElementById("ui-timer"),
       uiTimerFill: document.getElementById("ui-timer-fill"),
       uiTimerNum: document.getElementById("ui-timer-num"),
+      tbTimerRow: document.getElementById("tb-timer-row"),
       progressFilled: null, // removed
       questionText: document.getElementById("question-text"),
       answers: document.getElementById("answers"),
@@ -2171,6 +2504,7 @@
       state.pendingGameOver = false;
       els.uiTimerNum.textContent = "0";
       els.uiTimer.classList.remove("is-penalty");
+      if (els.tbTimerRow) els.tbTimerRow.classList.remove("hidden");
       clearTimeout(state.timerSoundTimeoutId);
       state.timerSoundTriggered = false;
       sounds.timerLast5.pause();
@@ -2355,8 +2689,15 @@
       answerText.className = "answer-text";
       answerText.textContent = text;
 
+      // Nur sichtbar, wenn die Zeile später .correct-state bekommt (siehe
+      // classicHandleCorrect()/handleWrong()) - sonst per CSS ausgeblendet.
+      const check = document.createElement("div");
+      check.className = "answer-check";
+      check.innerHTML = '<span class="check-circle">✓</span>';
+
       button.appendChild(letter);
       button.appendChild(answerText);
+      button.appendChild(check);
       button.addEventListener("click", () => {
         if (isClassicMode()) {
           chooseAnswerClassic(index + 1);
@@ -2778,7 +3119,10 @@
       // Frage-Nummer/Niveau als Chips.
       if (els.uiCategory) els.uiCategory.textContent = question.category || "Allgemeinwissen";
       if (els.uiQuestionChip) els.uiQuestionChip.textContent = `Frage ${state.round}`;
-      if (els.uiLevelChip) els.uiLevelChip.textContent = DIFFICULTY_KEY_FOR_VARIANTEN[lvl] || "leicht";
+      if (els.uiLevelChip) {
+        els.uiLevelChip.textContent = DIFFICULTY_KEY_FOR_VARIANTEN[lvl] || "leicht";
+        els.uiLevelChip.className = `quiz-info-chip quiz-info-chip-level level-${lvl}`;
+      }
 
       els.uiScore.textContent = `${state.totalScore} in Folge`;
       els.questionText.textContent = question.question;
@@ -2875,6 +3219,7 @@
     function handleTimeUpClassic() {
       if (!state.currentQuestion) return;
       state.roundAnswered = true;
+      if (els.tbTimerRow) els.tbTimerRow.classList.add("hidden");
       if (els.jokerWrap) els.jokerWrap.classList.add("hidden");
       if (els.fiftyWrap) els.fiftyWrap.classList.add("hidden");
       lockAllAnswers();
@@ -2886,6 +3231,10 @@
 
       state.roundAnswered = true;
       stopTimer();
+      // Timer wird nach Beantwortung nicht mehr gebraucht - ausblenden,
+      // damit der Ergebnis-Screen (Korrekt/Falsch) nicht unnötig hoch wird.
+      // Kommt in resetQuizUi() beim Start der nächsten Frage wieder zurück.
+      if (els.tbTimerRow) els.tbTimerRow.classList.add("hidden");
       if (els.jokerWrap) els.jokerWrap.classList.add("hidden");
       if (els.fiftyWrap) els.fiftyWrap.classList.add("hidden");
       lockAllAnswers();
@@ -2975,17 +3324,136 @@
       els.answers.appendChild(correctRow);
 
       const richtigText = randomRichtigText(state.currentQuestion.difficulty);
-      const currentNiveau = DIFFICULTY_KEY_FOR_VARIANTEN[state.currentQuestion.difficulty] || "leicht";
-      const soloScoreLine = state.gameMode === "classic"
-        ? `<br><span class="result-points-sub"><span class="result-label">Score für Frage ${state.round} (${currentNiveau}):</span> <span class="result-value result-value-solo ${soloScoreEffectClass(state.lastClassicSoloPoints)}">${state.lastClassicSoloPoints}</span></span>`
-        : "";
-      els.resultPoints.innerHTML = `<span class="result-feedback-text" id="result-richtig-headline"></span><br><span class="result-points-sub"><span class="result-label">Korrekte Antworten:</span> <span class="result-value result-value-correct">${state.totalScore}</span></span>${soloScoreLine}`;
+
+      // Punkte-Kreis zeigt den Score dieser Frage im Modus "Competition"
+      // (klassisch ohne KI-Fragen); "Training" kennt keine Punkte, dort
+      // zeigt der Kreis stattdessen die aktuelle Serie.
+      const isCompetition = state.gameMode === "classic";
+      const badgeTarget = isCompetition ? state.lastClassicSoloPoints : state.totalScore;
+      const badgeLabel = isCompetition ? "Gehirnzellen" : "Serie";
+      const badgeEffectClass = soloScoreEffectClass(badgeTarget);
+
+      // Frage-Nr./Niveau stehen schon oben in der Topbar, deshalb hier nicht
+      // noch einmal als eigene Badge-Zeile. "Fragen richtig" bleibt
+      // zunächst versteckt: Phase 1 zeigt Frage-Badge/Kreis/Label
+      // nebeneinander, ruhig stehend (kein Herüberrutschen mehr - siehe
+      // Nutzer-Feedback), Kreis zählt über 3s hoch. Nach 2,5s Standzeit
+      // (Phase 2, nur Competition) wechselt die Badge zu "Gesamt:", der
+      // Kreis wächst während er auf die Gesamtpunktzahl hochzählt. Erst
+      // danach erscheint "X Fragen richtig", zentriert darunter.
+      els.resultPoints.innerHTML = `
+        <hr class="result-divider" />
+        <div class="result-confetti-layer" id="result-confetti"></div>
+        <div class="result-headline"><span class="result-feedback-text" id="result-richtig-headline"></span></div>
+        <div class="result-lower-wrap" id="result-lower-wrap">
+          <div class="gehirnzellen-swarm" id="gz-swarm"></div>
+          <div class="result-score-row" id="result-score-row">
+            <div class="result-frage-badge quiz-info-chip" id="result-frage-badge">Frage ${state.round}</div>
+            <div class="points-wrap" id="result-points-wrap">
+              <div class="points-badge ${badgeEffectClass}">
+                <span class="points-num" id="result-points-num">0</span>
+              </div>
+            </div>
+            <div class="result-side-label" id="result-side-label">${badgeLabel}</div>
+          </div>
+          <div class="result-stat-row hidden" id="result-stat-row">
+            <span class="result-stat-check">&#10003;</span>
+            <span class="result-stat-num">${state.totalScore}</span>
+            <span>Fragen richtig!</span>
+          </div>
+        </div>
+      `;
       els.resultPoints.classList.remove("hidden");
       els.resultPoints.classList.add("fade-in");
       typewriterReveal(document.getElementById("result-richtig-headline"), richtigText);
+      spawnResultConfetti(document.getElementById("result-confetti"));
 
       els.resultTotal.classList.add("hidden");
       els.resultInfo.classList.add("hidden");
+
+      const token = state.flowToken;
+
+      // Kein Hochzählen für den Punktwert dieser Frage - der steht sofort
+      // fest (nur das Gesamt-Hochzählen in Phase 2 bleibt animiert). 150ms
+      // Verzögerung, damit die Zahl im selben Moment erscheint wie der
+      // Kreis seine eigene Pop-in-Animation abschließt.
+      window.setTimeout(() => {
+        if (token !== state.flowToken) return;
+        const numEl = document.getElementById("result-points-num");
+        if (numEl) numEl.textContent = String(badgeTarget);
+      }, 150);
+
+      // Der "Weiter"-Button bleibt komplett unsichtbar, bis "X Fragen
+      // richtig" erscheint - erst dann fadet er ein (kurze Disabled-Phase
+      // danach als Schutz vor Versehentlich-Wegklicken).
+      const revealStatRow = () => {
+        if (token !== state.flowToken) return;
+        const statRow = document.getElementById("result-stat-row");
+        if (statRow) {
+          statRow.classList.remove("hidden");
+          statRow.classList.add("fade-in");
+        }
+        showContinueDisabledThenEnable(false, 500);
+      };
+
+      const POPIN_DELAY_MS = 150;
+      const STAND_ZEIT_MS = 2000;
+
+      if (isCompetition) {
+        window.setTimeout(() => {
+          if (token !== state.flowToken) return;
+          const frageBadge = document.getElementById("result-frage-badge");
+          const pointsWrap = document.getElementById("result-points-wrap");
+          const totalChanged = state.classicSoloScore !== badgeTarget;
+
+          if (frageBadge) {
+            frageBadge.style.opacity = "0";
+            window.setTimeout(() => {
+              if (token !== state.flowToken) return;
+              frageBadge.textContent = "Gesamt:";
+              frageBadge.style.opacity = "1";
+            }, 250);
+          }
+
+          if (totalChanged && pointsWrap) {
+            // Die Eingangs-Animation (resultPopUp, fill-mode forwards) hält
+            // sonst weiter ihren eigenen opacity/transform-Endwert und
+            // überschreibt jeden inline gesetzten transform - beim Kappen
+            // deshalb beides explizit auf den Endzustand zurücksetzen, bevor
+            // die Wachstums-Transition (mit Reflow dazwischen) startet.
+            pointsWrap.style.animation = "none";
+            pointsWrap.style.opacity = "1";
+            pointsWrap.style.transition = "none";
+            pointsWrap.style.transform = "scale(1)";
+            void pointsWrap.offsetWidth;
+            pointsWrap.style.transition = "transform 2s ease-out";
+            pointsWrap.style.transform = "scale(1.4)";
+            animateResultCount(document.getElementById("result-points-num"), state.classicSoloScore, 2000, 0);
+
+            // scale() wächst symmetrisch vom Zentrum - der Kreis frisst sich
+            // dadurch auf beiden Seiten gleichermaßen in Headline-Abstand
+            // (unten) und Stat-Zeilen-Abstand (oben) hinein. GROWTH_PX gleicht
+            // genau das aus (halbe Differenz aus End- und Startdurchmesser:
+            // (84px * 1.4 - 84px) / 2), damit der Abstand zum Kreisrand über
+            // die ganze Wachstumsanimation sichtbar konstant bleibt statt
+            // sich zusehends zuzuziehen.
+            const GROWTH_PX = 17;
+            const headlineEl = document.querySelector(".result-headline");
+            const statRowEl = document.getElementById("result-stat-row");
+            if (headlineEl) headlineEl.style.marginBottom = `${30 + GROWTH_PX}px`;
+            if (statRowEl) statRowEl.style.marginTop = `${24 + GROWTH_PX}px`;
+
+            // Gehirnzellen-Schwarm: ein Partikel pro Gesamtpunkt, faded ein,
+            // sobald die Gesamtpunktzahl zu erscheinen beginnt (Referenz:
+            // gehirnzellen_schwarm_282.html).
+            spawnGehirnzellenSwarm(document.getElementById("gz-swarm"), state.classicSoloScore);
+          }
+
+          window.setTimeout(revealStatRow, 2000);
+        }, POPIN_DELAY_MS + STAND_ZEIT_MS);
+      } else {
+        window.setTimeout(revealStatRow, POPIN_DELAY_MS + STAND_ZEIT_MS);
+      }
 
       // Schwierigkeit der nächsten Frage einmalig vorausberechnen und cachen,
       // damit der "Weiter"-Button-Text und die tatsächlich geladene Frage
@@ -2994,8 +3462,8 @@
       state.nextDifficultyPreview = nextDifficulty;
       const nextNiveau = DIFFICULTY_KEY_FOR_VARIANTEN[nextDifficulty] || "leicht";
       els.continueBtn.textContent = `Weiter mit Frage ${state.round + 1} (${nextNiveau})`;
-
-      showContinueDisabledThenEnable(false);
+      // Button-Reveal passiert jetzt in revealStatRow() oben, nicht mehr an
+      // einen festen Timer gekoppelt.
     }
 
     function nextRoundClassic() {
@@ -3061,7 +3529,7 @@
       });
     }
 
-    function showContinueDisabledThenEnable(showTotalLater) {
+    function showContinueDisabledThenEnable(showTotalLater, delayMs = 2000) {
       els.continueBtn.classList.remove("hidden");
       els.continueBtn.classList.add("is-disabled");
       els.continueBtn.disabled = true;
@@ -3074,7 +3542,7 @@
         }
         els.continueBtn.disabled = false;
         els.continueBtn.classList.remove("is-disabled");
-      }, 2000);
+      }, delayMs);
     }
 
     function clearGameOverMode() {
