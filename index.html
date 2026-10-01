@@ -1790,11 +1790,13 @@
         <div class="field">
           <label for="username">Name</label>
           <input id="username" type="text" maxlength="12" placeholder="Max. 12 Zeichen" autocomplete="off" />
+          <p class="hint">Optional – ohne Namen erscheinst du als "Anonym" in der Highscore.</p>
         </div>
 
         <div class="field">
           <label for="plz">Postleitzahl</label>
-          <input id="plz" type="text" maxlength="5" inputmode="numeric" pattern="[0-9]{5}" placeholder="10115" autocomplete="postal-code" required />
+          <input id="plz" type="text" maxlength="5" inputmode="numeric" pattern="[0-9]{5}" placeholder="10115" autocomplete="postal-code" />
+          <p class="hint">Optional – ohne PLZ erscheinst du als "Geheim" in der Bezirks-Rangliste.</p>
         </div>
 
         <div class="mode-select" id="mode-select">
@@ -3886,23 +3888,31 @@
 
     async function startGame() {
       const rawName = els.usernameInput.value.trim();
-      if (!rawName) {
-        alert("Bitte gib zuerst einen Namen ein.");
-        els.usernameInput.focus();
-        return;
-      }
+      state.username = rawName ? rawName.slice(0, 12) : "Anonym";
 
       const rawPlz = els.plzInput.value.trim();
 
-      if (!/^\d{5}$/.test(rawPlz)) {
-        alert("Bitte gib eine gültige 5-stellige Postleitzahl ein.");
+      if (rawPlz && !/^\d{5}$/.test(rawPlz)) {
+        alert("Bitte gib eine gültige 5-stellige Postleitzahl ein, oder lass das Feld leer.");
         els.plzInput.focus();
         return;
       }
 
-      state.username = rawName.slice(0, 12);
-      state.plz = rawPlz;
-      lookupAndSaveOrtsname(state.plz); // im Hintergrund, blockiert den Spielstart nicht
+      if (rawPlz) {
+        state.plz = rawPlz;
+        lookupAndSaveOrtsname(state.plz); // im Hintergrund, blockiert den Spielstart nicht
+      } else {
+        // Keine PLZ angegeben: anonymer Schlüssel pro Session statt einer echten
+        // PLZ. Kein 5-stelliges Zahlenformat, damit er nicht mit echten
+        // Bezirken kollidiert und in der Highscore-Liste als "Geheim" erscheint
+        // (siehe PLZ_PATTERN-Check bei loadHighscores / Render-Code unten).
+        // Isoliert Fragen-Historie und Highscore-Eintrag pro Session, statt
+        // sich mit anderen PLZ-losen Spielern einen gemeinsamen Eintrag zu teilen.
+        if (!state.anonPlz) {
+          state.anonPlz = "geheim-" + Math.random().toString(36).slice(2, 10);
+        }
+        state.plz = state.anonPlz;
+      }
 
       // Sicherstellen dass Fragen geladen sind. Beide Modi teilen sich seit
       // dem Pool-Merge denselben vollständigen Fragenpool (?all=1) statt
@@ -4006,7 +4016,7 @@
           tr.innerHTML = `
             <td class="hs-rank">${i + 1}</td>
             <td>${s.username || "–"}</td>
-            <td>${s.plz || "–"}</td>
+            <td>${/^\d{5}$/.test(s.plz) ? s.plz : "Geheim"}</td>
             <td class="hs-score">${s.score}</td>`;
           tbody.appendChild(tr);
         });
@@ -4023,7 +4033,7 @@
           const tr = document.createElement("tr");
           tr.innerHTML = `
             <td class="hs-rank">${i + 1}</td>
-            <td>${[s.plz, s.ort].filter(Boolean).join(" ")}</td>
+            <td>${[s.plz, s.ort].filter(Boolean).join(" ") || "Geheim"}</td>
             <td class="hs-score">${s.score}</td>
             <td class="hs-score">${s.games}</td>
             <td class="hs-score">${s.average}</td>`;
