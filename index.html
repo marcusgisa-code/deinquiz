@@ -170,6 +170,7 @@
 
     .field-row .field {
       margin-bottom: 0;
+      flex: 1;
     }
 
     .field-plz { flex: 0 0 110px; }
@@ -204,6 +205,11 @@
       color: var(--text-muted);
     }
 
+    .field .hint {
+      text-align: left;
+      margin-bottom: 0;
+    }
+
     .button-row {
       display: flex;
       gap: 14px;
@@ -214,36 +220,66 @@
 
     .mode-select {
       display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
+      flex-direction: column;
+      gap: 14px;
       margin-bottom: 20px;
     }
 
     .mode-card {
-      flex: 1 1 140px;
+      width: 100%;
       background: rgba(255,255,255,0.04);
       border: 1.5px solid rgba(255,255,255,0.10);
       border-radius: 16px;
-      padding: 14px 14px;
+      padding: 18px 20px;
       display: flex;
-      flex-direction: column;
-      gap: 4px;
+      flex-direction: row;
+      align-items: center;
+      gap: 16px;
       text-align: left;
       color: var(--text-main);
       font-family: inherit;
     }
 
+    .mode-card-text {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex: 1;
+      min-width: 0;
+    }
+
     .mode-card-title {
-      font-size: 14px;
+      font-size: 16px;
       font-weight: 800;
       text-transform: uppercase;
       letter-spacing: 0.04em;
     }
 
     .mode-card-desc {
-      font-size: 12px;
+      font-size: 13px;
       color: var(--text-muted);
       line-height: 1.35;
+    }
+
+    .mode-card-icon {
+      flex: 0 0 auto;
+      width: 64px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 16px;
+    }
+
+    .mode-card-icon img {
+      width: 58%;
+      height: 58%;
+      object-fit: contain;
+    }
+
+    .mode-card-icon-competition {
+      background: rgba(255,152,0,0.10);
+      border: 1.5px solid rgba(255,152,0,0.45);
     }
 
     .mode-card:hover {
@@ -258,10 +294,6 @@
 
     .mode-card.is-selected .mode-card-title {
       color: var(--accent-soft);
-    }
-
-    @media (max-width: 520px) {
-      .mode-select { flex-direction: column; }
     }
 
     /* Joker-Buttons: linksbündig zu den Antwortoptionen gestapelt (nicht
@@ -1777,6 +1809,10 @@
       .welcome-card {
         padding: 24px;
       }
+
+      .field-row {
+        flex-direction: column;
+      }
     }
   </style>
 </head>
@@ -1785,32 +1821,27 @@
     <section id="screen-welcome" class="screen">
       <div class="welcome-card">
         <h1>Dein <span id="quiz-title-q" style="cursor:default;">Q</span>uiz</h1>
-        <p>Wie heißt du?</p>
-
-        <div class="field">
-          <label for="username">Name</label>
-          <input id="username" type="text" maxlength="12" placeholder="Max. 12 Zeichen" autocomplete="off" />
-          <p class="hint">Optional – ohne Namen erscheinst du als "Anonym" in der Highscore.</p>
-        </div>
-
-        <div class="field">
-          <label for="plz">Postleitzahl</label>
-          <input id="plz" type="text" maxlength="5" inputmode="numeric" pattern="[0-9]{5}" placeholder="10115" autocomplete="postal-code" />
-          <p class="hint">Optional – ohne PLZ erscheinst du als "Geheim" in der Bezirks-Rangliste.</p>
-        </div>
 
         <div class="mode-select" id="mode-select">
           <button type="button" class="mode-card hidden" id="mode-card-new" data-mode="new">
-            <span class="mode-card-title">Neues Spielprinzip</span>
-            <span class="mode-card-desc">Antworten selbst aufdecken, Tempo-Bonus, steigende Schwierigkeit, 2 Joker-Arten</span>
+            <div class="mode-card-text">
+              <span class="mode-card-title">Neues Spielprinzip</span>
+              <span class="mode-card-desc">Antworten selbst aufdecken, Tempo-Bonus, steigende Schwierigkeit, 2 Joker-Arten</span>
+            </div>
           </button>
           <button type="button" class="mode-card is-selected" id="mode-card-classic" data-mode="classic">
-            <span class="mode-card-title">Competition</span>
-            <span class="mode-card-desc">Ein Fehler beendet die Runde. Sammle deine beste Serie und miss dich mit anderen. 2 Joker-Arten (Überspringen + 50:50)</span>
+            <div class="mode-card-text">
+              <span class="mode-card-title">Competition</span>
+              <span class="mode-card-desc">Ein Fehler beendet die Runde. Sammle deine beste Serie und miss dich mit anderen. 2 Joker-Arten (Überspringen + 50:50)</span>
+            </div>
+            <span class="mode-card-icon mode-card-icon-competition"><img src="GFX/Competition_symbol.png" alt="" /></span>
           </button>
           <button type="button" class="mode-card" id="mode-card-classic-ki" data-mode="classic-ki">
-            <span class="mode-card-title">Training</span>
-            <span class="mode-card-desc">Übe ohne Druck und verbessere deine Serie. Gleiche Regeln wie Competition, 2 Joker-Arten (Überspringen + 50:50)</span>
+            <span class="mode-card-icon mode-card-icon-training"><img src="GFX/Training_symbol.png" alt="" /></span>
+            <div class="mode-card-text">
+              <span class="mode-card-title">Training</span>
+              <span class="mode-card-desc">Übe ohne Druck und verbessere deine Serie. Gleiche Regeln wie Competition, 2 Joker-Arten (Überspringen + 50:50)</span>
+            </div>
           </button>
         </div>
 
@@ -1818,6 +1849,21 @@
           <button id="start-btn" class="btn-primary">Spiel starten</button>
           <button id="highscore-btn" class="btn-secondary">Highscore</button>
         </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="username">Name</label>
+            <input id="username" type="text" maxlength="12" placeholder="Max. 12 Zeichen" autocomplete="off" />
+            <p class="hint">Optional – ohne Namen erscheinst du als "Anonym" in der Highscore.</p>
+          </div>
+
+          <div class="field">
+            <label for="plz">Postleitzahl</label>
+            <input id="plz" type="text" maxlength="5" inputmode="numeric" pattern="[0-9]{5}" placeholder="10115" autocomplete="postal-code" />
+            <p class="hint">Optional – ohne PLZ erscheinst du als "Geheim" in der Bezirks-Rangliste.</p>
+          </div>
+        </div>
+
         <div id="loading-hint" class="hint hidden">Fragen werden geladen…</div>
         <div class="legal-footer">
           <a href="impressum.html">Impressum</a>
