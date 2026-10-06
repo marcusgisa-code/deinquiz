@@ -1253,60 +1253,61 @@
       margin-top: 16px;
     }
     .go-card-top {
-      padding: 28px 24px 24px;
+      padding: 40px 24px 32px;
       text-align: center;
       border-bottom: 1px solid var(--border);
+      background: #FBE9EC;
     }
     .go-tag {
-      display: inline-block;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.1em;
+      display: block;
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: clamp(44px, 10vw, 72px);
+      line-height: 1;
+      letter-spacing: 0.06em;
       text-transform: uppercase;
       color: #A32A3C;
-      background: #FBE9EC;
-      border: 1px solid rgba(163,42,60,0.35);
-      border-radius: 6px;
-      padding: 3px 10px;
-      margin-bottom: 14px;
     }
     .go-player {
       font-family: var(--font-display);
-      font-size: 24px;
+      font-size: 30px;
       font-weight: 600;
       color: var(--text-main);
-      margin: 0 0 4px;
+      margin: 22px 0 0;
     }
     .go-sub {
-      font-size: 13px;
+      font-size: 16px;
       color: var(--text-muted);
-      margin: 0;
+      margin: 4px 0 0;
     }
     .go-stats {
       display: flex;
       border-bottom: 1px solid var(--border);
     }
     .go-stat {
-      flex: 1;
-      padding: 20px 0;
+      flex: 1 1 100px;
+      padding: 26px 8px;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 4px;
+      gap: 8px;
     }
     .go-stat + .go-stat { border-left: 1px solid var(--border); }
     .go-stat-n {
-      font-size: 28px;
-      font-weight: 800;
+      font-family: var(--font-body);
+      font-size: 40px;
+      font-weight: 700;
       color: var(--text-main);
       line-height: 1;
     }
     .go-stat-n.gold { color: var(--accent); }
     .go-stat-l {
-      font-size: 10px;
+      font-size: 13px;
+      font-weight: 500;
       color: var(--text-muted);
       text-transform: uppercase;
-      letter-spacing: 0.07em;
+      letter-spacing: 0.1em;
+      text-align: center;
     }
     .go-btns {
       padding: 16px;
